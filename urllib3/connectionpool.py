@@ -9,36 +9,8 @@ import socket
 
 from socket import error as SocketError, timeout as SocketTimeout
 
-try:   # Python 3
-    from http.client import HTTPConnection, HTTPException
-    from http.client import HTTP_PORT, HTTPS_PORT
-except ImportError:
-    from httplib import HTTPConnection, HTTPException
-    from httplib import HTTP_PORT, HTTPS_PORT
-
-try:   # Python 3
-    from queue import LifoQueue, Empty, Full
-except ImportError:
-    from Queue import LifoQueue, Empty, Full
-
-
-try:   # Compiled with SSL?
-    HTTPSConnection = object
-    BaseSSLError = None
-    ssl = None
-
-    try:   # Python 3
-        from http.client import HTTPSConnection
-    except ImportError:
-        from httplib import HTTPSConnection
-
-    import ssl
-    BaseSSLError = ssl.SSLError
-
-except ImportError:
-    pass
-
-
+from .connection import  HTTPSConnection, VerifiedHTTPSConnection
+from .constants import HTTP_PORT, HTTPS_PORT, port_by_scheme
 from .request import RequestMethods
 from .response import HTTPResponse
 from .util import get_host, is_connection_dropped
@@ -59,48 +31,6 @@ xrange = six.moves.xrange
 log = logging.getLogger(__name__)
 
 _Default = object()
-
-port_by_scheme = {
-    'http': HTTP_PORT,
-    'https': HTTPS_PORT,
-}
-
-
-## Connection objects (extension of httplib)
-
-class VerifiedHTTPSConnection(HTTPSConnection):
-    """
-    Based on httplib.HTTPSConnection but wraps the socket with
-    SSL certification.
-    """
-    cert_reqs = None
-    ca_certs = None
-
-    def set_cert(self, key_file=None, cert_file=None,
-                 cert_reqs='CERT_NONE', ca_certs=None):
-        ssl_req_scheme = {
-            'CERT_NONE': ssl.CERT_NONE,
-            'CERT_OPTIONAL': ssl.CERT_OPTIONAL,
-            'CERT_REQUIRED': ssl.CERT_REQUIRED
-        }
-
-        self.key_file = key_file
-        self.cert_file = cert_file
-        self.cert_reqs = ssl_req_scheme.get(cert_reqs) or ssl.CERT_NONE
-        self.ca_certs = ca_certs
-
-    def connect(self):
-        # Add certificate verification
-        sock = socket.create_connection((self.host, self.port), self.timeout)
-
-        # Wrap socket using verification with the root certs in
-        # trusted_root_certs
-        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
-                                    cert_reqs=self.cert_reqs,
-                                    ca_certs=self.ca_certs)
-        if self.ca_certs:
-            match_hostname(self.sock.getpeercert(), self.host)
-
 
 ## Pool objects
 

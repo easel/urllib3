@@ -14,6 +14,19 @@ from .filepost import encode_multipart_formdata
 
 __all__ = ['RequestMethods']
 
+class Request(object):
+    """
+    A request is the base class representing all requests regardless of
+    scheme
+    """
+    pass
+
+class HTTPRequest(Request):
+    """
+    An HTTPRequest wraps the headers and body of a typical HTTPRequest and
+    can serialize and deserialize itself
+    """
+    pass
 
 class RequestMethods(object):
     """
